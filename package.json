@@ -1,6 +1,6 @@
 {
   "name": "kahon",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript reader for the Kahon binary JSON format",
   "license": "MIT",
   "author": "Jan Karlo Dela Cruz",
