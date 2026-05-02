@@ -1,0 +1,15 @@
+[package]
+name = "bench-gen"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+kahon = { git = "https://github.com/jankdc/kahon-rs" }
+
+[[bin]]
+name = "bench-gen"
+path = "src/main.rs"
+
+[profile.release]
+lto = "thin"

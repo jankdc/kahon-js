@@ -1,0 +1,52 @@
+[
+  {
+    "id": "tolerated/uint8-non-minimal-zero",
+    "description": "Integer 0 encoded as UInt8 (40 00) instead of TinyUInt (13). Writers MUST use TinyUInt; readers SHOULD accept the non-minimal form (§11.1: 'Non-minimal integer encoding - SHOULD accept').",
+    "spec_refs": ["§5.2", "§11.1", "§11.2"],
+    "json_text": "0",
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": "scalar/tinyuint-zero",
+    "bytes_hex": "4B41484E 0100 40 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "tolerated/string-non-minimal-1byte",
+    "description": "String \"a\" encoded with the generic 0x6F tag (6F 01 61) instead of TinyString (60 61). Writers MUST use TinyString for 1..15 bytes; readers SHOULD accept the generic form (§11.1: 'Non-minimal string encoding - SHOULD accept').",
+    "spec_refs": ["§5.4", "§11.1", "§11.2"],
+    "json_text": "\"a\"",
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": "string/tinystring-1",
+    "bytes_hex": "4B41484E 0100 6F 01 61 0600000000000000 4B41484E"
+  },
+  {
+    "id": "tolerated/empty-array-as-zero-leaf",
+    "description": "Empty array encoded as an n=0 array leaf (70 00) instead of the EmptyArray singleton (33). Writers MUST emit the singleton (§7.0); readers SHOULD accept the n=0 leaf (§11.1).",
+    "spec_refs": ["§7.0", "§11.1", "§11.2"],
+    "json_text": "[]",
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": "container/empty-array",
+    "bytes_hex": "4B41484E 0100 70 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "tolerated/array-non-minimal-width",
+    "description": "Single-element array [1] encoded with offset width w=1 (tag 0x71, two-byte slots) when w=0 would have fit. Writers MUST pick the smallest fitting W; readers SHOULD accept any W that fits (§7, §11.1: 'Non-minimal offset width - SHOULD accept').",
+    "spec_refs": ["§7", "§11.1", "§11.2"],
+    "json_text": "[1]",
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": "container/array-singleton",
+    "bytes_hex": "4B41484E 0100 14 71 01 0600 0700000000000000 4B41484E"
+  },
+  {
+    "id": "tolerated/extension-c0-opaque",
+    "description": "Extension type code 0xC0 with varuint length 3 and payload bytes 'abc'. Writers MUST NOT emit Extension codes (§4); readers SHOULD treat them as opaque using the length prefix to skip or surface bytes. No JSON correspondence - Extension codes are reserved for future spec versions.",
+    "spec_refs": ["§4", "§11.1"],
+    "json_text": null,
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": null,
+    "bytes_hex": "4B41484E 0100 C0 03 61 62 63 0600000000000000 4B41484E"
+  }
+]

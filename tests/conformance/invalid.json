@@ -1,0 +1,138 @@
+[
+  {
+    "id": "header/bad-leading-magic",
+    "description": "Leading 4 bytes are 'BAHN', not 'KAHN'.",
+    "spec_refs": ["§10.1", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Leading magic ≠ \"KAHN\" (§10.1: readers MUST reject on magic mismatch).",
+    "bytes_hex": "42 41 48 4E 0100 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "header/version-unsupported",
+    "description": "Version byte is 0x02; only 0x01 is defined for this version of the spec.",
+    "spec_refs": ["§10.1", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Unsupported version (§10.1: readers MUST reject unsupported version).",
+    "bytes_hex": "4B41484E 0200 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "header/flags-nonzero",
+    "description": "Flags byte is 0x01; reserved and MUST be 0x00.",
+    "spec_refs": ["§3", "§10.1", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "flags ≠ 0 (§10.1: any flag bit set MUST be rejected).",
+    "bytes_hex": "4B41484E 0101 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "trailer/bad-trailing-magic",
+    "description": "Trailing 4 bytes are 'BAHN', not 'KAHN'.",
+    "spec_refs": ["§10.2", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Trailing magic ≠ \"KAHN\" (§10.2).",
+    "bytes_hex": "4B41484E 0100 00 0600000000000000 42 41 48 4E"
+  },
+  {
+    "id": "trailer/root-offset-too-small",
+    "description": "Body holds a Null at offset 6, but root_offset = 5 points into the header (flags byte).",
+    "spec_refs": ["§10.2", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "root_offset < 6 (§10.2: root_offset MUST be ≥ 6).",
+    "bytes_hex": "4B41484E 0100 00 0500000000000000 4B41484E"
+  },
+  {
+    "id": "trailer/root-offset-too-large",
+    "description": "File size is 19 (one Null body byte). root_offset = 7 points into the trailer; max valid is file_size − 13 = 6.",
+    "spec_refs": ["§10.2", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "root_offset > file_size − 13 (§10.2).",
+    "bytes_hex": "4B41484E 0100 00 0700000000000000 4B41484E"
+  },
+  {
+    "id": "object/leaf-unsorted-keys",
+    "description": "Object leaf with two pairs whose keys are 'b' (deref 0x06) then 'a' (deref 0x08). Bytes are well-formed but the keys are not strictly UTF-8-sorted.",
+    "spec_refs": ["§7.3", "§8 invariant 4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Object leaf keys are not strictly UTF-8-sorted: deref(key_off[0])=\"b\" > deref(key_off[1])=\"a\" (§7.3, §8).",
+    "bytes_hex": "4B41484E 0100 60 62 60 61 14 15 80 02 06 0A 08 0B 0C00000000000000 4B41484E"
+  },
+  {
+    "id": "object/leaf-duplicate-key",
+    "description": "Object leaf with two pairs whose key offsets both deref to \"a\".",
+    "spec_refs": ["§7.3", "§8 invariant 4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Duplicate key in a leaf - keys MUST be strictly sorted and unique (§7.3, §8).",
+    "bytes_hex": "4B41484E 0100 60 61 14 15 80 02 06 08 06 09 0A00000000000000 4B41484E"
+  },
+  {
+    "id": "decode/reserved-type-code",
+    "description": "Body byte 0x35 is in the reserved gap 0x35..0x3F.",
+    "spec_refs": ["§4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Unknown / reserved type code in traversal (§4: reserved gaps MUST NOT appear; readers MUST reject).",
+    "bytes_hex": "4B41484E 0100 35 0600000000000000 4B41484E"
+  },
+  {
+    "id": "container/internal-m-equals-1",
+    "description": "Array internal node with m=1 wrapping a single child leaf. Single-node containers MUST be stored as a leaf, not wrapped (§8 invariant 3).",
+    "spec_refs": ["§7.2", "§8 invariant 3", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Internal node with m < 2 (§8 invariant 3; §11.1 lists this as MUST reject).",
+    "bytes_hex": "4B41484E 0100 13 70 01 06 74 01 01 0100000000000000 07 0A00000000000000 4B41484E"
+  },
+  {
+    "id": "varuint/overlong",
+    "description": "Generic String length prefix is 11 bytes long (10 continuation bytes + 0x00). The varuint encodes value 0 but uses more than the 10-byte maximum.",
+    "spec_refs": ["§6", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Overlong varuint - exceeds the 10-byte maximum (§6: decoders MUST reject overlong varuints).",
+    "bytes_hex": "4B41484E 0100 6F 80 80 80 80 80 80 80 80 80 80 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "decode/reserved-0x48",
+    "description": "Body byte 0x48 falls in the reserved gap 0x48..0x4F (between Int64 and Float32).",
+    "spec_refs": ["§4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Unknown / reserved type code in gap 0x48..0x4F (§4: reserved gaps MUST NOT appear; readers MUST reject).",
+    "bytes_hex": "4B41484E 0100 48 0600000000000000 4B41484E"
+  },
+  {
+    "id": "decode/reserved-0x52",
+    "description": "Body byte 0x52 falls in the reserved gap 0x52..0x5F (between Float64 and TinyString).",
+    "spec_refs": ["§4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Unknown / reserved type code in gap 0x52..0x5F (§4).",
+    "bytes_hex": "4B41484E 0100 52 0600000000000000 4B41484E"
+  },
+  {
+    "id": "decode/reserved-0x88",
+    "description": "Body byte 0x88 falls in the reserved gap 0x88..0xBF (between object-internal and Extension).",
+    "spec_refs": ["§4", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Unknown / reserved type code in gap 0x88..0xBF (§4).",
+    "bytes_hex": "4B41484E 0100 88 0600000000000000 4B41484E"
+  },
+  {
+    "id": "offset/below-six",
+    "description": "Array leaf at @06 has off[0] = 5, which lands on the flags byte inside the header. §8 invariant 7 requires offsets ≥ 6.",
+    "spec_refs": ["§8", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Container offset < 6 (§8 invariant 7; §11.1: 'offset not strictly earlier than its node, in the header, or on a non-type-code byte').",
+    "bytes_hex": "4B41484E 0100 70 01 05 0600000000000000 4B41484E"
+  },
+  {
+    "id": "offset/forward-reference",
+    "description": "Array leaf at @07 has off[0] = 0x0A, which equals or exceeds the leaf's own position (0x07). §8 invariant 7 requires offsets strictly less than the carrying node's position.",
+    "spec_refs": ["§8", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Container offset not strictly less than the carrying node's position - postorder forbids forward references (§8 invariant 7).",
+    "bytes_hex": "4B41484E 0100 14 70 01 0A 0700000000000000 4B41484E"
+  },
+  {
+    "id": "offset/mid-payload",
+    "description": "Array leaf at @09 has off[0] = 0x07, which lands on the second byte of an earlier UInt16 payload. The dereferenced byte 0x88 is not a valid type-code byte (it falls in reserved gap 0x88..0xBF). Demonstrates that readers MUST validate the tag at every dereferenced offset, not only at the root. Note: the spec's only mechanism for detecting a mid-payload offset is the type-code check at the dereferenced byte (§4, §8 invariant 7); a mid-payload offset that happens to land on a defined tag is undetectable and out of scope.",
+    "spec_refs": ["§4", "§8", "§11.1"],
+    "must_reject": true,
+    "reject_reason": "Dereferenced byte 0x88 is in reserved gap 0x88..0xBF - §8 invariant 7 requires every offset to land on a valid type-code byte; §11.1 marks unknown type codes during traversal as MUST reject.",
+    "bytes_hex": "4B41484E 0100 41 88 88 70 01 07 0900000000000000 4B41484E"
+  }
+]
