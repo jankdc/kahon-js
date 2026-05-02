@@ -1,4 +1,4 @@
-//! Streaming generator for kahon-js benchmark fixtures.
+//! Streaming generator for kahon benchmark fixtures.
 //!
 //! Produces a single big-object with N keys named `key_00000000`, `key_00000001`,
 //! ... where each value is a string of `--value-bytes` bytes. Output is written

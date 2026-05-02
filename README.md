@@ -5,7 +5,7 @@ JavaScript reader for the Kahon binary JSON format.
 ## Quick start
 
 ```ts
-import { KahonReader } from "kahon-js";
+import { KahonReader } from "kahon";
 
 // File-backed, lazy random-access reads.
 const r = await KahonReader.fromFile("./data.kahon");

@@ -1,5 +1,5 @@
 {
-  "name": "kahon-js",
+  "name": "kahon",
   "version": "0.1.0",
   "description": "TypeScript reader for the Kahon binary JSON format",
   "type": "module",
