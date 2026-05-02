@@ -4,6 +4,10 @@
   "description": "TypeScript reader for the Kahon binary JSON format",
   "license": "MIT",
   "author": "Jan Karlo Dela Cruz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jankdc/kahon-js.git"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
