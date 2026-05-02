@@ -15,7 +15,7 @@ import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
-import { KahonReader } from "../../src/index.ts";
+import { FileSource, KahonReader } from "../../src/index.ts";
 
 const SELF = fileURLToPath(import.meta.url);
 const FILE = process.argv[2] ?? "/tmp/big-1M.kahon";
@@ -54,7 +54,8 @@ async function child() {
     return process.memoryUsage.rss();
   };
 
-  const reader = await KahonReader.fromFile(FILE, {
+  const src = await FileSource.open(FILE);
+  const reader = await KahonReader.fromSource(src, {
     sourceCacheBytes: cacheBytes,
   });
 
@@ -81,7 +82,7 @@ async function child() {
   await sleep(200);
   const post = await settle();
 
-  await reader.close();
+  await src.close();
   const out: Cell = { baseline, peak, post };
   process.stdout.write(JSON.stringify(out) + "\n");
 }

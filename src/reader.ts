@@ -26,12 +26,7 @@ import {
   type NodeHeader,
   type Path,
 } from "./parse.js";
-import {
-  BufferSource,
-  CachedByteSource,
-  FileSource,
-  type ByteSource,
-} from "./source.js";
+import { CachedByteSource, type ByteSource } from "./source.js";
 
 export type { KahonKind, KahonScalar, KahonValue, Path } from "./parse.js";
 
@@ -52,9 +47,9 @@ export interface KahonReaderOptions {
    */
   readChunkBytes?: number;
   /**
-   * Byte budget for the source-level LRU. 0 disables caching. Ignored when
-   * the underlying source is already in memory (`fromBuffer`).
-   * Default: 4 MiB.
+   * Byte budget for the source-level LRU. 0 disables caching. The reader
+   * wraps the supplied source in a `CachedByteSource` unless this is 0 or
+   * the source is already a `CachedByteSource`. Default: 4 MiB.
    */
   sourceCacheBytes?: number;
   /**
@@ -127,38 +122,6 @@ export class KahonReader {
     private readonly opts: ResolvedOptions,
   ) {}
 
-  static async fromFile(path: string, opts?: KahonReaderOptions): Promise<KahonReader> {
-    const resolved = resolveOptions(opts);
-    const inner = await FileSource.open(path);
-    const source: ByteSource =
-      resolved.sourceCacheBytes > 0
-        ? new CachedByteSource(inner, {
-            cacheBytes: resolved.sourceCacheBytes,
-            chunkBytes: resolved.readChunkBytes,
-          })
-        : inner;
-    try {
-      const reader = new KahonReader(source, resolved);
-      await reader.validate();
-      return reader;
-    } catch (err) {
-      await source.close();
-      throw err;
-    }
-  }
-
-  static async fromBuffer(
-    buffer: Buffer | Uint8Array,
-    opts?: KahonReaderOptions,
-  ): Promise<KahonReader> {
-    const resolved = resolveOptions(opts);
-    const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-    // No cache wrapper: BufferSource reads are already zero-copy slices.
-    const reader = new KahonReader(new BufferSource(buf), resolved);
-    await reader.validate();
-    return reader;
-  }
-
   static async fromSource(
     source: ByteSource,
     opts?: KahonReaderOptions,
@@ -216,10 +179,6 @@ export class KahonReader {
 
   async has(path: Path): Promise<boolean> {
     return (await this.find(path)) !== undefined;
-  }
-
-  async close(): Promise<void> {
-    await this.source.close();
   }
 
   /** @internal */

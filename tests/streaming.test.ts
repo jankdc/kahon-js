@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  KahonReader,
+  BufferSource,
   CachedByteSource,
+  KahonReader,
   type ByteSource,
 } from "../src/index.js";
 
@@ -103,13 +104,13 @@ test("CachedByteSource: serves repeated reads from cache", async () => {
 });
 
 test("maxContainerEntries: cap at the actual size still works", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE, { maxContainerEntries: 3 });
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), { maxContainerEntries: 3 });
   assert.deepStrictEqual(await r.decode(), { a: [1, 2, "x"] });
 });
 
 test("maxContainerEntries: rejects containers exceeding cap", async () => {
   // FIXTURE has an array of length 3. Cap at 2 → navigation throws.
-  const r = await KahonReader.fromBuffer(FIXTURE, { maxContainerEntries: 2 });
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), { maxContainerEntries: 2 });
   await assert.rejects(() => r.get("/a/0"), /exceeding cap=2/);
   await assert.rejects(() => r.decode(), /exceeding cap=2/);
 });
@@ -136,7 +137,7 @@ test("streaming: chunked binary search avoids reading the whole pair table", asy
   // Skip: hand-rolled binary fixtures are brittle. Instead just confirm
   // chunked-mode lookups succeed end-to-end on the canonical fixture above
   // and trust the unit-level coverage of EntryTable for window correctness.
-  const r = await KahonReader.fromBuffer(FIXTURE, {
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), {
     eagerEntriesThreshold: 1,
     sourceCacheBytes: 0,
   });
@@ -157,7 +158,7 @@ test("streaming: chunked objectChildOf finds keys without full table read", asyn
 });
 
 test("streaming: tight knobs still decode correctly", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE, {
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), {
     eagerEntriesThreshold: 4 * 1024,
     readChunkBytes: 16 * 1024,
     sourceCacheBytes: 1 * 1024 * 1024,
@@ -166,7 +167,7 @@ test("streaming: tight knobs still decode correctly", async () => {
 });
 
 test("streaming: tiny eager threshold still iterates correctly", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE, {
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), {
     eagerEntriesThreshold: 1,
     readChunkBytes: 4,
     sourceCacheBytes: 0,
@@ -179,7 +180,7 @@ test("streaming: tiny eager threshold still iterates correctly", async () => {
 });
 
 test("streaming: tiny eager threshold yields correct object entries", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE, {
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), {
     eagerEntriesThreshold: 1,
     sourceCacheBytes: 0,
   });
@@ -195,7 +196,7 @@ test("validation: malformed leaf still rejected when validateLeafKeys=true", asy
   // Sanity: the existing conformance fixture for unsorted keys still throws
   // under the default settings (covered by conformance.test.ts) - re-assert
   // here that flipping the flag off makes the reader trust the producer.
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   assert.equal(await r.get("/a/0"), 1);
 });
 
@@ -205,6 +206,6 @@ test("validation: object leaf validated at most once per reader", async () => {
   // with a 2-key object. We don't have one handy; instead we just verify the
   // option plumbs through and that disabling skips work without changing
   // results on the 1-key fixture.
-  const r = await KahonReader.fromBuffer(FIXTURE, { validateLeafKeys: false });
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE), { validateLeafKeys: false });
   assert.deepStrictEqual(await r.decode(), { a: [1, 2, "x"] });
 });

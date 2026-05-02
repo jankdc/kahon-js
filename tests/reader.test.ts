@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { KahonReader } from "../src/index.js";
+import { BufferSource, FileSource, KahonReader } from "../src/index.js";
 
 // The spec's worked example: {"a": [1, 2.0, "x"]}
 //
@@ -36,12 +36,12 @@ const EMPTY_OBJECT = Buffer.from([
 ]);
 
 test("full decode of worked example", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   assert.deepStrictEqual(await r.decode(), { a: [1, 2, "x"] });
 });
 
 test("get by JSON pointer", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   assert.deepStrictEqual(await r.get("/a"), [1, 2, "x"]);
   assert.equal(await r.get("/a/0"), 1);
   assert.equal(await r.get("/a/1"), 2);
@@ -51,14 +51,14 @@ test("get by JSON pointer", async () => {
 });
 
 test("get by array path", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   assert.deepStrictEqual(await r.get(["a"]), [1, 2, "x"]);
   assert.equal(await r.get(["a", 0]), 1);
   assert.equal(await r.get(["a", 2]), "x");
 });
 
 test("has", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   assert.equal(await r.has("/a"), true);
   assert.equal(await r.has("/a/0"), true);
   assert.equal(await r.has("/a/3"), false);
@@ -67,7 +67,7 @@ test("has", async () => {
 });
 
 test("cursor navigation is lazy and typed", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   const root = await r.root();
   assert.equal(await root.kind(), "object");
   assert.equal(await root.length(), 1);
@@ -85,7 +85,7 @@ test("cursor navigation is lazy and typed", async () => {
 });
 
 test("Symbol.asyncIterator yields child cursors for arrays", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   const a = (await (await r.root()).get("a"))!;
   const out: unknown[] = [];
   for await (const c of a) out.push(await c.decode());
@@ -93,7 +93,7 @@ test("Symbol.asyncIterator yields child cursors for arrays", async () => {
 });
 
 test("entries() yields [key, cursor] for objects", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   const root = await r.root();
   const collected: [string, unknown][] = [];
   for await (const [k, c] of root.entries()) {
@@ -103,14 +103,14 @@ test("entries() yields [key, cursor] for objects", async () => {
 });
 
 test("keys() yields object keys", async () => {
-  const r = await KahonReader.fromBuffer(FIXTURE);
+  const r = await KahonReader.fromSource(new BufferSource(FIXTURE));
   const out: string[] = [];
   for await (const k of (await r.root()).keys()) out.push(k);
   assert.deepStrictEqual(out, ["a"]);
 });
 
 test("empty object decodes to {}", async () => {
-  const r = await KahonReader.fromBuffer(EMPTY_OBJECT);
+  const r = await KahonReader.fromSource(new BufferSource(EMPTY_OBJECT));
   assert.deepStrictEqual(await r.decode(), {});
   assert.equal(await (await r.root()).kind(), "object");
   assert.equal(await (await r.root()).length(), 0);
@@ -119,39 +119,36 @@ test("empty object decodes to {}", async () => {
 test("rejects bad header magic", async () => {
   const bad = Buffer.from(FIXTURE);
   bad[0] = 0xff;
-  await assert.rejects(() => KahonReader.fromBuffer(bad), /header magic/i);
+  await assert.rejects(() => KahonReader.fromSource(new BufferSource(bad)), /header magic/i);
 });
 
 test("rejects bad version", async () => {
   const bad = Buffer.from(FIXTURE);
   bad[4] = 0x99;
-  await assert.rejects(() => KahonReader.fromBuffer(bad), /version/i);
+  await assert.rejects(() => KahonReader.fromSource(new BufferSource(bad)), /version/i);
 });
 
 test("rejects bad trailer magic", async () => {
   const bad = Buffer.from(FIXTURE);
   bad[bad.length - 1] = 0xff;
-  await assert.rejects(() => KahonReader.fromBuffer(bad), /trailer magic/i);
+  await assert.rejects(() => KahonReader.fromSource(new BufferSource(bad)), /trailer magic/i);
 });
 
 test("rejects truncated file", async () => {
   const bad = FIXTURE.subarray(0, 10);
-  await assert.rejects(() => KahonReader.fromBuffer(bad));
+  await assert.rejects(() => KahonReader.fromSource(new BufferSource(bad)));
 });
 
 test("file-backed reader via fd", async () => {
   const tmp = path.join(os.tmpdir(), `kahon-${process.pid}-${Date.now()}.kahon`);
   fs.writeFileSync(tmp, FIXTURE);
   try {
-    const r = await KahonReader.fromFile(tmp);
-    try {
-      assert.deepStrictEqual(await r.decode(), { a: [1, 2, "x"] });
-      assert.equal(await r.get("/a/1"), 2);
-      assert.equal(await r.has("/a/0"), true);
-      assert.equal(await r.has("/a/9"), false);
-    } finally {
-      await r.close();
-    }
+    await using src = await FileSource.open(tmp);
+    const r = await KahonReader.fromSource(src);
+    assert.deepStrictEqual(await r.decode(), { a: [1, 2, "x"] });
+    assert.equal(await r.get("/a/1"), 2);
+    assert.equal(await r.has("/a/0"), true);
+    assert.equal(await r.has("/a/9"), false);
   } finally {
     fs.unlinkSync(tmp);
   }
@@ -163,7 +160,10 @@ test("file-backed reader rejects bad magic on open", async () => {
   bad[0] = 0xff;
   fs.writeFileSync(tmp, bad);
   try {
-    await assert.rejects(() => KahonReader.fromFile(tmp), /header magic/i);
+    await assert.rejects(async () => {
+      await using src = await FileSource.open(tmp);
+      await KahonReader.fromSource(src);
+    }, /header magic/i);
   } finally {
     fs.unlinkSync(tmp);
   }

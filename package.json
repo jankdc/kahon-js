@@ -23,7 +23,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.4"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.6.0",

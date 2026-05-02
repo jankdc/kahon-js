@@ -1,15 +1,17 @@
 import * as fsp from "node:fs/promises";
 
-/** Asynchronous random-access byte source. */
+/**
+ * Asynchronous random-access byte source. Implementers are responsible for
+ * managing their own resources.
+ */
 export interface ByteSource {
   readonly size: number;
   read(offset: number, length: number): Promise<Buffer>;
-  close(): Promise<void>;
 }
 
 /**
- * Adapts a Buffer to the byte-source interface. Useful for tests and for the
- * `fromBuffer` factory.
+ * Adapts a Buffer to the byte-source interface. Useful for tests and for
+ * feeding already-in-memory bytes to the reader.
  */
 export class BufferSource implements ByteSource {
   constructor(private readonly buffer: Buffer) {}
@@ -26,14 +28,13 @@ export class BufferSource implements ByteSource {
     }
     return this.buffer.subarray(offset, offset + length);
   }
-
-  async close(): Promise<void> {}
 }
 
 /**
  * File-backed source using `fs.promises` random-access reads. Memory usage
  * is independent of file size - only the bytes touched during navigation
- * are read off disk.
+ * are read off disk. Holds an OS file handle, so use `await using` (or call
+ * `close()` explicitly) to release it.
  */
 export class FileSource implements ByteSource {
   readonly size: number;
@@ -80,6 +81,10 @@ export class FileSource implements ByteSource {
     if (this.closed) return;
     this.closed = true;
     await this.handle.close();
+  }
+
+  [Symbol.asyncDispose](): Promise<void> {
+    return this.close();
   }
 }
 
@@ -146,12 +151,6 @@ export class CachedByteSource implements ByteSource {
       written += sliceEnd - sliceStart;
     }
     return out;
-  }
-
-  async close(): Promise<void> {
-    this.lru.clear();
-    this.used = 0;
-    await this.inner.close();
   }
 
   private async getChunk(idx: number): Promise<Buffer> {
