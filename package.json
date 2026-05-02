@@ -2,6 +2,8 @@
   "name": "kahon",
   "version": "0.1.0",
   "description": "TypeScript reader for the Kahon binary JSON format",
+  "license": "MIT",
+  "author": "Jan Karlo Dela Cruz",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,11 +13,12 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": ["dist"],
   "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "prepublishOnly": "npm run build"
   },
   "engines": { "node": ">=18" },
   "devDependencies": {
