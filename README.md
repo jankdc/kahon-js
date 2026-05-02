@@ -4,6 +4,10 @@ JavaScript reader for the Kahon binary JSON format.
 
 ## Quick start
 
+```bash
+npm install kahon
+```
+
 ```ts
 import { KahonReader } from "kahon";
 
