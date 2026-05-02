@@ -15,7 +15,13 @@
 // the measurement pass.
 
 import { readFileSync } from "node:fs";
-import { KahonReader, type KahonReaderOptions } from "../../src/index.ts";
+import {
+  BufferSource,
+  FileSource,
+  KahonReader,
+  type ByteSource,
+  type KahonReaderOptions,
+} from "../../src/index.ts";
 
 type SourceKind = "file" | "buffer";
 
@@ -69,11 +75,14 @@ async function main() {
   // benefits from the OS page cache; but every subsequent read on the reader
   // is in-process memory regardless of cold/hot.
   let reader: KahonReader;
+  let src: ByteSource;
   if (source === "file") {
-    reader = await KahonReader.fromFile(cfg.file, cfg.knobs);
+    src = await FileSource.open(cfg.file);
+    reader = await KahonReader.fromSource(src, cfg.knobs);
   } else {
     const buf = readFileSync(cfg.file);
-    reader = await KahonReader.fromBuffer(buf, cfg.knobs);
+    src = new BufferSource(buf);
+    reader = await KahonReader.fromSource(src, cfg.knobs);
   }
   const op = cfg.op ?? "get";
 
@@ -118,7 +127,7 @@ async function main() {
   }
   measuring = false;
 
-  await reader.close();
+  if (src instanceof FileSource) await src.close();
   clearInterval(sampler);
 
   perOp.sort((a, b) => a - b);

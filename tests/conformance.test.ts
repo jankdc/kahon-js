@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { KahonReader } from "../src/index.js";
+import { BufferSource, KahonReader } from "../src/index.js";
 
 type ValidVector = { id: string; description: string; json_text: string; bytes_hex: string };
 type InvalidVector = { id: string; description: string; must_reject: true; bytes_hex: string };
@@ -72,7 +72,7 @@ function normalize(v: unknown): unknown {
 
 for (const v of valid) {
   test(`conformance/valid: ${v.id}`, async () => {
-    const reader = await KahonReader.fromBuffer(hexToBuffer(v.bytes_hex));
+    const reader = await KahonReader.fromSource(new BufferSource(hexToBuffer(v.bytes_hex)));
     assert.deepStrictEqual(
       normalize(await reader.decode()),
       normalize(parseExpected(v.json_text)),
@@ -86,7 +86,7 @@ const ACCEPT_ONLY = new Set<string>(["tolerated/extension-c0-opaque"]);
 
 for (const v of tolerated) {
   test(`conformance/tolerated: ${v.id}`, async () => {
-    const reader = await KahonReader.fromBuffer(hexToBuffer(v.bytes_hex));
+    const reader = await KahonReader.fromSource(new BufferSource(hexToBuffer(v.bytes_hex)));
     if (ACCEPT_ONLY.has(v.id)) {
       await reader.decode();
       return;
@@ -101,7 +101,7 @@ for (const v of tolerated) {
 for (const v of invalid) {
   test(`conformance/invalid: ${v.id}`, async () => {
     await assert.rejects(async () => {
-      const reader = await KahonReader.fromBuffer(hexToBuffer(v.bytes_hex));
+      const reader = await KahonReader.fromSource(new BufferSource(hexToBuffer(v.bytes_hex)));
       await reader.decode();
     });
   });

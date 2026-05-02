@@ -9,17 +9,21 @@ npm install kahon
 ```
 
 ```ts
-import { KahonReader } from "kahon";
+import { BufferSource, FileSource, KahonReader } from "kahon";
 
-// File-backed, lazy random-access reads.
-const r = await KahonReader.fromFile("./data.kahon");
+await using src = await FileSource.open("./data.kahon");
+const r = await KahonReader.fromSource(src);
 // JSON Pointer Syntax
 await r.get("/users/0/name");
-for await (const c of await r.root()) ...
-await r.close();
+// Iterate children of the root (works for arrays and objects).
+for await (const c of await r.root()) {
+  await c.get("name");        // descend into an object child
+  await c.at(0);              // descend into an array child
+  await c.decode();           // materialize this subtree as a plain JS value
+}
 
-// In-memory, mostly for testing.
-const r2 = await KahonReader.fromBuffer(buf);
+// In-memory, mostly for testing. BufferSource has no resources to release.
+const r2 = await KahonReader.fromSource(new BufferSource(buf));
 await r2.get("/users/0/name");
 ```
 
@@ -28,11 +32,10 @@ needs to answer the lookups you make.
 
 ## Reader Options
 
-Pass options as the second argument to `fromFile` / `fromBuffer` /
-`fromSource`:
+Pass options as the second argument to `fromSource`:
 
 ```ts
-await KahonReader.fromFile(path, {
+await KahonReader.fromSource(src, {
   eagerEntriesThreshold: 64 * 1024,
   readChunkBytes:        16 * 1024,
   sourceCacheBytes:       4 * 1024 * 1024,
