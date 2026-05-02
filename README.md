@@ -1,6 +1,6 @@
 # Kahon for JS
 
-JavaScript reader for the Kahon binary JSON format.
+A TypeScript/JavaScript reader for the [Kahon binary format](https://github.com/jankdc/kahon).
 
 ## Quick start
 
