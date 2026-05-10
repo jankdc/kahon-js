@@ -2,236 +2,267 @@
   {
     "id": "scalar/null",
     "description": "JSON null encoded as type code 0x00.",
-    "spec_refs": ["§4", "§5.1", "§10"],
+    "spec_refs": ["§4", "§5.1", "§11"],
     "json_text": "null",
-    "bytes_hex": "4B41484E 0100 00 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 00 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/true",
     "description": "JSON true encoded as type code 0x02.",
     "spec_refs": ["§4", "§5.1"],
     "json_text": "true",
-    "bytes_hex": "4B41484E 0100 02 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 02 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/false",
     "description": "JSON false encoded as type code 0x01.",
     "spec_refs": ["§4", "§5.1"],
     "json_text": "false",
-    "bytes_hex": "4B41484E 0100 01 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 01 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/tinyuint-zero",
     "description": "Integer 0 encoded as TinyUInt (0x13). Minimal-form rule per §5.2.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "0",
-    "bytes_hex": "4B41484E 0100 13 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 13 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/tinyuint-max",
     "description": "Integer 31 encoded as TinyUInt (0x32), the upper boundary.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "31",
-    "bytes_hex": "4B41484E 0100 32 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 32 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/tinynegint-neg1",
     "description": "Integer -1 encoded as TinyNegInt (0x03). value = 0x02 - code = -1.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-1",
-    "bytes_hex": "4B41484E 0100 03 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 03 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/tinynegint-neg16",
     "description": "Integer -16 encoded as TinyNegInt (0x12), the lower boundary.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-16",
-    "bytes_hex": "4B41484E 0100 12 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 12 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/uint8-32",
     "description": "Integer 32: just past the TinyUInt range, smallest fit is UInt8.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "32",
-    "bytes_hex": "4B41484E 0100 4020 0600000000000000 4B41484E",
-    "byte_breakdown": [
-      {"offset": "0x06", "hex": "40", "meaning": "UInt8 tag"},
-      {"offset": "0x07", "hex": "20", "meaning": "value 32"}
-    ]
+    "bytes_hex": "4B41484E 0200 4020 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/uint8-max",
     "description": "Integer 255 fits UInt8.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "255",
-    "bytes_hex": "4B41484E 0100 40FF 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 40FF 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/uint16-256",
     "description": "Integer 256: just past UInt8 range, smallest fit is UInt16 (little-endian 00 01).",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "256",
-    "bytes_hex": "4B41484E 0100 41 0001 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 41 0001 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/uint32-65536",
     "description": "Integer 65536: just past UInt16 range, smallest fit is UInt32 (little-endian 00 00 01 00).",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "65536",
-    "bytes_hex": "4B41484E 0100 42 00000100 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 42 00000100 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/uint64-2pow32",
     "description": "Integer 4294967296 (= 2^32): just past UInt32 range, smallest fit is UInt64.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "4294967296",
-    "bytes_hex": "4B41484E 0100 43 0000000001000000 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 43 0000000001000000 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/int8-neg17",
     "description": "Integer -17: just past TinyNegInt range, smallest fit is Int8 (-17 = 0xEF in two's complement).",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-17",
-    "bytes_hex": "4B41484E 0100 44 EF 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 44 EF 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/int8-min",
     "description": "Integer -128 fits Int8 (lower bound, 0x80 in two's complement).",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-128",
-    "bytes_hex": "4B41484E 0100 44 80 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 44 80 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/int16-neg129",
     "description": "Integer -129: just past Int8 range, smallest fit is Int16. -129 = 0xFF7F → LE 7F FF.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-129",
-    "bytes_hex": "4B41484E 0100 45 7FFF 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 45 7FFF 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/int32-neg32769",
     "description": "Integer -32769: just past Int16 range, smallest fit is Int32. 32-bit two's complement = 0xFFFF7FFF → LE FF 7F FF FF.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-32769",
-    "bytes_hex": "4B41484E 0100 46 FF7FFFFF 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 46 FF7FFFFF 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/int64-neg2pow31m1",
     "description": "Integer -2147483649: just past Int32 range, smallest fit is Int64. 64-bit two's complement = 0xFFFFFFFF7FFFFFFF → LE FF FF FF 7F FF FF FF FF.",
     "spec_refs": ["§4", "§5.2"],
     "json_text": "-2147483649",
-    "bytes_hex": "4B41484E 0100 47 FFFFFF7FFFFFFFFF 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 47 FFFFFF7FFFFFFFFF 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/float32-1.0",
     "description": "Float 1.0 narrows to binary32 round-trip (= 0x3F800000) → Float32, LE bytes 00 00 80 3F.",
     "spec_refs": ["§4", "§5.3"],
     "json_text": "1.0",
-    "bytes_hex": "4B41484E 0100 50 0000803F 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 50 0000803F 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/float32-2.0",
     "description": "Float 2.0 → Float32, IEEE 0x40000000, LE bytes 00 00 00 40. Matches §7.5 worked example.",
     "spec_refs": ["§4", "§5.3", "§7.5"],
     "json_text": "2.0",
-    "bytes_hex": "4B41484E 0100 50 00000040 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 50 00000040 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/float32-neg-zero",
     "description": "Float -0.0 → Float32 with sign bit set, IEEE 0x80000000, LE bytes 00 00 00 80. Sign of zero is preserved for floats (contrast §5.2 for integer 0).",
     "spec_refs": ["§4", "§5.3"],
     "json_text": "-0.0",
-    "bytes_hex": "4B41484E 0100 50 00000080 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 50 00000080 0600000000000000 4B41484E"
   },
   {
     "id": "scalar/float64-0.1",
     "description": "Float 0.1 has no exact binary32 round-trip; encodes as Float64 (binary64 = 0x3FB999999999999A → LE 9A 99 99 99 99 99 B9 3F).",
     "spec_refs": ["§4", "§5.3"],
     "json_text": "0.1",
-    "bytes_hex": "4B41484E 0100 51 9A9999999999B93F 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 51 9A9999999999B93F 0600000000000000 4B41484E"
   },
   {
     "id": "string/empty",
     "description": "Empty string uses the generic form (TinyString covers only 1..15 bytes). varuint length 0.",
     "spec_refs": ["§4", "§5.4"],
     "json_text": "\"\"",
-    "bytes_hex": "4B41484E 0100 6F 00 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 6F 00 0600000000000000 4B41484E"
   },
   {
     "id": "string/tinystring-1",
     "description": "String \"a\" (1 UTF-8 byte) uses TinyString tag 0x60 + (1-1) = 0x60.",
     "spec_refs": ["§4", "§5.4"],
     "json_text": "\"a\"",
-    "bytes_hex": "4B41484E 0100 60 61 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 60 61 0600000000000000 4B41484E"
   },
   {
     "id": "string/tinystring-15",
     "description": "15-byte ASCII string at the upper TinyString boundary; tag = 0x60 + 14 = 0x6E.",
     "spec_refs": ["§4", "§5.4"],
     "json_text": "\"abcdefghijklmno\"",
-    "bytes_hex": "4B41484E 0100 6E 6162636465666768696A6B6C6D6E6F 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 6E 6162636465666768696A6B6C6D6E6F 0600000000000000 4B41484E"
   },
   {
     "id": "string/generic-16",
     "description": "16-byte string: just past TinyString range, smallest fit is the generic String 0x6F with varuint length 16 (= 0x10).",
     "spec_refs": ["§4", "§5.4"],
     "json_text": "\"0123456789ABCDEF\"",
-    "bytes_hex": "4B41484E 0100 6F 10 30313233343536373839414243444546 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 6F 10 30313233343536373839414243444546 0600000000000000 4B41484E"
   },
   {
     "id": "container/empty-array",
     "description": "Empty array uses singleton 0x33 (writers MUST NOT emit n=0 leaf).",
     "spec_refs": ["§4", "§7.0"],
     "json_text": "[]",
-    "bytes_hex": "4B41484E 0100 33 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 33 0600000000000000 4B41484E"
   },
   {
     "id": "container/empty-object",
     "description": "Empty object uses singleton 0x34.",
     "spec_refs": ["§4", "§7.0"],
     "json_text": "{}",
-    "bytes_hex": "4B41484E 0100 34 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 34 0600000000000000 4B41484E"
   },
   {
     "id": "container/array-singleton",
     "description": "Array [1] as a 1-element leaf with offset width w=0.",
     "spec_refs": ["§4", "§7.1"],
     "json_text": "[1]",
-    "bytes_hex": "4B41484E 0100 14 70 01 06 0700000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 14 70 01 06 0700000000000000 4B41484E"
   },
   {
     "id": "container/array-three",
     "description": "Array [1, 2, 3] as a 3-element leaf, all offsets fit in 1 byte (w=0).",
     "spec_refs": ["§4", "§7.1"],
     "json_text": "[1, 2, 3]",
-    "bytes_hex": "4B41484E 0100 14 15 16 70 03 06 07 08 0900000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 14 15 16 70 03 06 07 08 0900000000000000 4B41484E"
   },
   {
     "id": "container/object-single",
     "description": "Object {\"a\": 1} as a 1-pair leaf with w=0.",
     "spec_refs": ["§4", "§7.3"],
     "json_text": "{\"a\": 1}",
-    "bytes_hex": "4B41484E 0100 60 61 14 80 01 06 08 0900000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 60 61 14 80 01 06 08 0900000000000000 4B41484E"
   },
   {
     "id": "object/duplicate-input-last-wins",
-    "description": "Input {\"a\":1,\"a\":2} resolves last-wins (§11.2): writer encodes only the latest occurrence, byte-equivalent to {\"a\":2}. Writers MAY also reject duplicate input keys; either is conforming. This vector pins the last-wins encoding.",
-    "spec_refs": ["§7.4", "§8 invariant 5", "§11.2"],
+    "description": "Input {\"a\":1,\"a\":2} resolves last-wins (§12.2): writer encodes only the latest occurrence, byte-equivalent to {\"a\":2}. Writers MAY also reject duplicate input keys; either is conforming. This vector pins the last-wins encoding.",
+    "spec_refs": ["§7.4", "§8 invariant 5", "§12.2"],
     "json_text": "{\"a\": 1, \"a\": 2}",
-    "bytes_hex": "4B41484E 0100 60 61 15 80 01 06 08 0900000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 60 61 15 80 01 06 08 0900000000000000 4B41484E"
   },
   {
     "id": "container/object-two-sorted",
     "description": "Object {\"a\":1, \"b\":2} as a 2-pair leaf. Keys are strictly sorted by UTF-8 bytes.",
     "spec_refs": ["§4", "§7.3", "§8"],
     "json_text": "{\"a\": 1, \"b\": 2}",
-    "bytes_hex": "4B41484E 0100 60 61 60 62 14 15 80 02 06 0A 08 0B 0C00000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 60 61 60 62 14 15 80 02 06 0A 08 0B 0C00000000000000 4B41484E"
   },
   {
     "id": "container/spec-example",
-    "description": "Worked example from §7.5: {\"a\": [1, 2.0, \"x\"]}. Verifies cross-section behavior - TinyString, TinyUInt, Float32, array leaf, object leaf with w=0.",
+    "description": "Worked example from §7.5: {\"a\": [1, 2.0, \"x\"]}. Verifies cross-section behavior — TinyString, TinyUInt, Float32, array leaf, object leaf with w=0.",
     "spec_refs": ["§7.5"],
     "json_text": "{\"a\": [1, 2.0, \"x\"]}",
-    "bytes_hex": "4B41484E 0100 60 61 14 50 00000040 60 78 70 03 08 09 0E 80 01 06 10 1500000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 60 61 14 50 00000040 60 78 70 03 08 09 0E 80 01 06 10 1500000000000000 4B41484E"
+  },
+  {
+    "id": "ext/tinyext-null",
+    "description": "TinyExt with ext_id 0 wrapping a Null payload. Tag 0xC0 = 0xC0 + 0; payload is the immediately following Null (0x00). No-payload extension cases encode Null per §9.",
+    "spec_refs": ["§4", "§9"],
+    "json_text": "null",
+    "bytes_hex": "4B41484E 0200 C0 00 0600000000000000 4B41484E"
+  },
+  {
+    "id": "ext/tinyext-int",
+    "description": "TinyExt with ext_id 3 wrapping integer 1 (matches §4 example `C3 14`). Schema-blind readers MAY drop the ext_id and surface the payload (1) directly.",
+    "spec_refs": ["§4", "§9"],
+    "json_text": "1",
+    "bytes_hex": "4B41484E 0200 C3 14 0600000000000000 4B41484E"
+  },
+  {
+    "id": "ext/tinyext-max-id",
+    "description": "TinyExt at the upper boundary: ext_id 15 (tag 0xCF). Ids ≥ 16 MUST use the generic Ext form (0xD0).",
+    "spec_refs": ["§4", "§9", "§12.2"],
+    "json_text": "1",
+    "bytes_hex": "4B41484E 0200 CF 14 0600000000000000 4B41484E"
+  },
+  {
+    "id": "ext/generic-id-16",
+    "description": "Generic Ext form with ext_id 16 wrapping integer 1 (matches §4 example `D0 10 14`). Ids 0..15 MUST use TinyExt; this is the smallest id that requires the generic form.",
+    "spec_refs": ["§4", "§9", "§12.2"],
+    "json_text": "1",
+    "bytes_hex": "4B41484E 0200 D0 10 14 0600000000000000 4B41484E"
+  },
+  {
+    "id": "ext/in-array",
+    "description": "Array containing a single extension-wrapped integer: [<TinyExt 0 of 1>]. Container slots referencing an extension point at the extension tag (§9). Schema-blind readers see the value as `[1]`.",
+    "spec_refs": ["§7.1", "§8 invariant 1", "§9"],
+    "json_text": "[1]",
+    "bytes_hex": "4B41484E 0200 C0 14 70 01 06 0800000000000000 4B41484E"
   }
 ]

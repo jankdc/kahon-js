@@ -1,52 +1,62 @@
 [
   {
     "id": "tolerated/uint8-non-minimal-zero",
-    "description": "Integer 0 encoded as UInt8 (40 00) instead of TinyUInt (13). Writers MUST use TinyUInt; readers SHOULD accept the non-minimal form (§11.1: 'Non-minimal integer encoding - SHOULD accept').",
-    "spec_refs": ["§5.2", "§11.1", "§11.2"],
+    "description": "Integer 0 encoded as UInt8 (40 00) instead of TinyUInt (13). Writers MUST use TinyUInt; readers SHOULD accept the non-minimal form (§12.1: 'Non-minimal integer encoding — SHOULD accept').",
+    "spec_refs": ["§5.2", "§12.1", "§12.2"],
     "json_text": "0",
     "writer_compliant": false,
     "reader_should_accept": true,
     "minimal_form_id": "scalar/tinyuint-zero",
-    "bytes_hex": "4B41484E 0100 40 00 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 40 00 0600000000000000 4B41484E"
   },
   {
     "id": "tolerated/string-non-minimal-1byte",
-    "description": "String \"a\" encoded with the generic 0x6F tag (6F 01 61) instead of TinyString (60 61). Writers MUST use TinyString for 1..15 bytes; readers SHOULD accept the generic form (§11.1: 'Non-minimal string encoding - SHOULD accept').",
-    "spec_refs": ["§5.4", "§11.1", "§11.2"],
+    "description": "String \"a\" encoded with the generic 0x6F tag (6F 01 61) instead of TinyString (60 61). Writers MUST use TinyString for 1..15 bytes; readers SHOULD accept the generic form (§12.1: 'Non-minimal string encoding — SHOULD accept').",
+    "spec_refs": ["§5.4", "§12.1", "§12.2"],
     "json_text": "\"a\"",
     "writer_compliant": false,
     "reader_should_accept": true,
     "minimal_form_id": "string/tinystring-1",
-    "bytes_hex": "4B41484E 0100 6F 01 61 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 6F 01 61 0600000000000000 4B41484E"
   },
   {
     "id": "tolerated/empty-array-as-zero-leaf",
-    "description": "Empty array encoded as an n=0 array leaf (70 00) instead of the EmptyArray singleton (33). Writers MUST emit the singleton (§7.0); readers SHOULD accept the n=0 leaf (§11.1).",
-    "spec_refs": ["§7.0", "§11.1", "§11.2"],
+    "description": "Empty array encoded as an n=0 array leaf (70 00) instead of the EmptyArray singleton (33). Writers MUST emit the singleton (§7.0); readers SHOULD accept the n=0 leaf (§12.1).",
+    "spec_refs": ["§7.0", "§12.1", "§12.2"],
     "json_text": "[]",
     "writer_compliant": false,
     "reader_should_accept": true,
     "minimal_form_id": "container/empty-array",
-    "bytes_hex": "4B41484E 0100 70 00 0600000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 70 00 0600000000000000 4B41484E"
   },
   {
     "id": "tolerated/array-non-minimal-width",
-    "description": "Single-element array [1] encoded with offset width w=1 (tag 0x71, two-byte slots) when w=0 would have fit. Writers MUST pick the smallest fitting W; readers SHOULD accept any W that fits (§7, §11.1: 'Non-minimal offset width - SHOULD accept').",
-    "spec_refs": ["§7", "§11.1", "§11.2"],
+    "description": "Single-element array [1] encoded with offset width w=1 (tag 0x71, two-byte slots) when w=0 would have fit. Writers MUST pick the smallest fitting W; readers SHOULD accept any W that fits (§7, §12.1: 'Non-minimal offset width — SHOULD accept').",
+    "spec_refs": ["§7", "§12.1", "§12.2"],
     "json_text": "[1]",
     "writer_compliant": false,
     "reader_should_accept": true,
     "minimal_form_id": "container/array-singleton",
-    "bytes_hex": "4B41484E 0100 14 71 01 0600 0700000000000000 4B41484E"
+    "bytes_hex": "4B41484E 0200 14 71 01 0600 0700000000000000 4B41484E"
   },
   {
-    "id": "tolerated/extension-c0-opaque",
-    "description": "Extension type code 0xC0 with varuint length 3 and payload bytes 'abc'. Writers MUST NOT emit Extension codes (§4); readers SHOULD treat them as opaque using the length prefix to skip or surface bytes. No JSON correspondence - Extension codes are reserved for future spec versions.",
-    "spec_refs": ["§4", "§11.1"],
-    "json_text": null,
+    "id": "tolerated/ext-non-minimal-generic-form",
+    "description": "Extension ext_id 5 wrapping integer 1, encoded with the generic 0xD0 form (D0 05 14) instead of TinyExt (C5 14). Writers MUST use TinyExt for ids 0..15 (§9, §12.2 minimal-encoding table); readers SHOULD accept the generic form (§12.1: 'Non-minimal extension id encoding — SHOULD accept').",
+    "spec_refs": ["§9", "§12.1", "§12.2"],
+    "json_text": "1",
     "writer_compliant": false,
     "reader_should_accept": true,
-    "minimal_form_id": null,
-    "bytes_hex": "4B41484E 0100 C0 03 61 62 63 0600000000000000 4B41484E"
+    "minimal_form_bytes_hex": "4B41484E 0200 C5 14 0600000000000000 4B41484E",
+    "bytes_hex": "4B41484E 0200 D0 05 14 0600000000000000 4B41484E"
+  },
+  {
+    "id": "tolerated/ext-non-minimal-varuint-id",
+    "description": "Generic Ext with ext_id 16 encoded as a 2-byte overlong varuint (90 00) instead of the minimal 1-byte form (10). The varuint is well-formed (terminator present, ≤ 10 bytes) but not minimal; per §6 readers SHOULD accept non-minimal varuints, while writers MUST emit the minimal form.",
+    "spec_refs": ["§6", "§9", "§12.1", "§12.2"],
+    "json_text": "1",
+    "writer_compliant": false,
+    "reader_should_accept": true,
+    "minimal_form_id": "ext/generic-id-16",
+    "bytes_hex": "4B41484E 0200 D0 9000 14 0600000000000000 4B41484E"
   }
 ]

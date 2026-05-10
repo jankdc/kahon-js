@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { BufferSource, KahonReader } from "../src/index.js";
+import { BufferSource, KahonExtension, KahonReader } from "../src/index.js";
 
 type ValidVector = { id: string; description: string; json_text: string; bytes_hex: string };
 type InvalidVector = { id: string; description: string; must_reject: true; bytes_hex: string };
@@ -26,7 +26,7 @@ function parseExpected(jsonText: string): unknown {
   const bigints = new Map<string, bigint>();
   let counter = 0;
   const transformed = jsonText.replace(
-    /(^|[\s,\[\]{}:])(-?\d+)(?=$|[\s,\[\]{}])/g,
+    /(^|[\s,[\]{}:])(-?\d+)(?=$|[\s,[\]{}])/g,
     (_m, lead: string, num: string) => {
       const big = BigInt(num);
       if (big > BigInt(Number.MAX_SAFE_INTEGER) || big < BigInt(Number.MIN_SAFE_INTEGER)) {
@@ -54,7 +54,11 @@ function parseExpected(jsonText: string): unknown {
 
 // Spec allows readers to return integer values as either number or bigint when the
 // value fits in a safe integer; coerce safe-range bigints to numbers for comparison.
+// Extensions (§9) are kept in the decoded tree as `KahonExtension` wrappers so
+// callers can recover ext_ids; for fixture comparison against `json_text` we
+// peel the wrapper and surface the underlying value (schema-blind view).
 function normalize(v: unknown): unknown {
+  if (v instanceof KahonExtension) return normalize(v.value);
   if (typeof v === "bigint") {
     if (v >= BigInt(Number.MIN_SAFE_INTEGER) && v <= BigInt(Number.MAX_SAFE_INTEGER)) {
       return Number(v);
@@ -80,17 +84,9 @@ for (const v of valid) {
   });
 }
 
-// Vectors with no JSON correspondence (e.g. opaque extension codes); we only
-// assert the reader accepts them without throwing.
-const ACCEPT_ONLY = new Set<string>(["tolerated/extension-c0-opaque"]);
-
 for (const v of tolerated) {
   test(`conformance/tolerated: ${v.id}`, async () => {
     const reader = await KahonReader.fromSource(new BufferSource(hexToBuffer(v.bytes_hex)));
-    if (ACCEPT_ONLY.has(v.id)) {
-      await reader.decode();
-      return;
-    }
     assert.deepStrictEqual(
       normalize(await reader.decode()),
       normalize(parseExpected(v.json_text)),
