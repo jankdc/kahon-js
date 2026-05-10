@@ -6,6 +6,7 @@
 
 import { HEADER_SIZE } from "./codes.js";
 import {
+  KahonExtension,
   PEEK_CHUNK,
   parseStringPrelude,
   readUintW,
@@ -145,6 +146,25 @@ export function* readStringAt(offset: number): Eff<string> {
     throw new Error(`expected string at offset ${offset}, got ${h.kind}`);
   }
   return h.value;
+}
+
+/**
+ * Read the header at `offset`, then transparently descend through any
+ * extension wrappers (§9: extensions are transparent to JSON semantics) until
+ * the first non-extension header is reached. Returns the resolved offset and
+ * header so the caller can dispatch on the underlying kind. Used by path
+ * traversal and container-shape cursor ops.
+ */
+export function* peelExtensions(
+  offset: number,
+): Eff<{ offset: number; header: NodeHeader }> {
+  let off = offset;
+  let header = yield* readNodeHeader(off);
+  while (header.kind === "extension") {
+    off = header.payloadOffset;
+    header = yield* readNodeHeader(off);
+  }
+  return { offset: off, header };
 }
 
 /** Three-way compare: stored key at `offset` vs `target` (UTF-8). */
@@ -356,15 +376,12 @@ export function* decodeAt(offset: number, opts: EffOptions): Eff<KahonValue> {
       return yield* decodeArray(h, opts);
     case "object":
       return yield* decodeObject(h, opts);
-    case "extension":
-      // Extension codes carry no JSON correspondence, surface a sentinel so
-      // callers that traverse into one don't silently get `undefined`.
-      return EXTENSION_SENTINEL;
+    case "extension": {
+      const inner = yield* decodeAt(h.payloadOffset, opts);
+      return new KahonExtension(h.extId, inner);
+    }
   }
 }
-
-/** Marker returned by `decode()` when the value is an opaque extension. */
-export const EXTENSION_SENTINEL = Symbol.for("kahon.extension") as unknown as KahonValue;
 
 function* decodeArray(h: ContainerHeader, opts: EffOptions): Eff<KahonValue[]> {
   if (h.kind !== "array") throw new Error("not array");
@@ -446,7 +463,12 @@ function* decodeObject(
   return out;
 }
 
-/** Walk `segments` starting from `rootOffset`; returns the resolved offset, or undefined. */
+/**
+ * Walk `segments` starting from `rootOffset`; returns the resolved offset, or
+ * undefined. Extension wrappers are transparent: each segment peels through
+ * any extensions before dispatching, so a path like `/users/0/name` works
+ * regardless of whether the producer wrapped intermediate nodes in extensions.
+ */
 export function* findFromOffset(
   rootOffset: number,
   segments: ReadonlyArray<string | number>,
@@ -455,7 +477,8 @@ export function* findFromOffset(
   let offset: number | undefined = rootOffset;
   for (const seg of segments) {
     if (offset === undefined) return undefined;
-    const h: NodeHeader = yield* readNodeHeader(offset);
+    const peeled: { offset: number; header: NodeHeader } = yield* peelExtensions(offset);
+    const h: NodeHeader = peeled.header;
     if (h.kind === "array") {
       const idx = typeof seg === "number" ? seg : Number(seg);
       if (!Number.isInteger(idx) || idx < 0) return undefined;

@@ -7,6 +7,7 @@ import {
   enforceCap,
   findFromOffset,
   objectChildOf as objectChildOfEff,
+  peelExtensions as peelExtensionsEff,
   readNodeHeader as readNodeHeaderEff,
   readStringAt as readStringAtEff,
   run,
@@ -215,7 +216,7 @@ export class Cursor {
   }
 
   async length(): Promise<number> {
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind === "array" || h.kind === "object") return h.length;
     if (h.kind === "string") return h.byteLength;
     throw new Error(`length is not defined for kind=${h.kind}`);
@@ -225,8 +226,30 @@ export class Cursor {
     return run(this.reader._source(), decodeAtEff(this.offset, effOptsOf(this.reader)));
   }
 
-  async get(key: string): Promise<Cursor | undefined> {
+  /**
+   * Returns the extension's `ext_id` (§9). Throws if the cursor is not on an
+   * extension node - callers should check `kind() === "extension"` first when
+   * the position is uncertain.
+   */
+  async extId(): Promise<number> {
     const h = await this.header();
+    if (h.kind !== "extension") {
+      throw new Error(`extId() requires kind=extension, got kind=${h.kind}`);
+    }
+    return h.extId;
+  }
+
+  /** Returns a `Cursor` at the extension's payload value. Throws if not extension. */
+  async payload(): Promise<Cursor> {
+    const h = await this.header();
+    if (h.kind !== "extension") {
+      throw new Error(`payload() requires kind=extension, got kind=${h.kind}`);
+    }
+    return new Cursor(this.reader, h.payloadOffset);
+  }
+
+  async get(key: string): Promise<Cursor | undefined> {
+    const h = await this.peeledHeader();
     if (h.kind !== "object") return undefined;
     const off = await run(
       this.reader._source(),
@@ -237,7 +260,7 @@ export class Cursor {
 
   async at(index: number): Promise<Cursor | undefined> {
     if (!Number.isInteger(index)) return undefined;
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind !== "array") return undefined;
     const i = index < 0 ? h.length + index : index;
     if (i < 0 || i >= h.length) return undefined;
@@ -249,7 +272,7 @@ export class Cursor {
   }
 
   async has(key: string | number): Promise<boolean> {
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind === "object") return (await this.get(String(key))) !== undefined;
     if (h.kind === "array") {
       const idx = typeof key === "number" ? key : Number(key);
@@ -259,7 +282,7 @@ export class Cursor {
   }
 
   async *values(): AsyncIterableIterator<Cursor> {
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind === "array") yield* arrayChildren(this.reader, h);
     else if (h.kind === "object") {
       for await (const [, c] of objectEntries(this.reader, h)) yield c;
@@ -267,7 +290,7 @@ export class Cursor {
   }
 
   async *keys(): AsyncIterableIterator<string> {
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind === "object") {
       for await (const [k] of objectEntries(this.reader, h)) yield k;
     } else if (h.kind === "array") {
@@ -276,7 +299,7 @@ export class Cursor {
   }
 
   async *entries(): AsyncIterableIterator<[string, Cursor]> {
-    const h = await this.header();
+    const h = await this.peeledHeader();
     if (h.kind === "object") {
       yield* objectEntries(this.reader, h);
     } else if (h.kind === "array") {
@@ -294,6 +317,22 @@ export class Cursor {
       this.headerCache = await run(this.reader._source(), readNodeHeaderEff(this.offset));
     }
     return this.headerCache;
+  }
+
+  /**
+   * Header after peeling any extension wrappers (§9). Container-shape ops use
+   * this so callers can navigate through ext-wrapped objects/arrays without
+   * knowing about the wrapping. The cursor's logical position stays at
+   * `this.offset`, so `kind()`/`extId()` still surface the outermost wrapper.
+   */
+  private async peeledHeader(): Promise<NodeHeader> {
+    const cached = this.headerCache;
+    if (cached && cached.kind !== "extension") return cached;
+    const { header } = await run(
+      this.reader._source(),
+      peelExtensionsEff(this.offset),
+    );
+    return header;
   }
 }
 

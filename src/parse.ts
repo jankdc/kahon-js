@@ -33,6 +33,9 @@ import {
   T_OBJECT_LEAF_MAX,
   T_OBJECT_INTERNAL_MIN,
   T_OBJECT_INTERNAL_MAX,
+  T_TINY_EXT_MIN,
+  T_TINY_EXT_MAX,
+  T_EXT,
   widthFromCode,
   type OffsetWidth,
 } from "./codes.js";
@@ -52,8 +55,13 @@ export type ScalarHeader =
   | { kind: "boolean"; value: boolean }
   | { kind: "number"; value: number }
   | { kind: "bigint"; value: bigint }
-  | { kind: "string"; value: string; byteLength: number }
-  | { kind: "extension" };
+  | { kind: "string"; value: string; byteLength: number };
+
+export type ExtensionHeader = {
+  kind: "extension";
+  extId: number;
+  payloadOffset: number;
+};
 
 export type ContainerHeader =
   | {
@@ -91,10 +99,27 @@ export type ContainerHeader =
       nodeOffset: number;
     };
 
-export type NodeHeader = ScalarHeader | ContainerHeader;
+export type NodeHeader = ScalarHeader | ContainerHeader | ExtensionHeader;
 
 export type KahonScalar = null | boolean | number | bigint | string;
-export type KahonValue = KahonScalar | KahonValue[] | { [k: string]: KahonValue };
+export type KahonValue =
+  | KahonScalar
+  | KahonValue[]
+  | { [k: string]: KahonValue }
+  | KahonExtension;
+
+/**
+ * Tagged wrapper produced when `decode()` walks an extension node (§9). The
+ * `extId` is the producer-assigned discriminator; `value` is the recursively
+ * decoded payload (which may itself contain `KahonExtension` instances for
+ * nested extensions).
+ */
+export class KahonExtension {
+  constructor(
+    readonly extId: number,
+    readonly value: KahonValue,
+  ) {}
+}
 
 /** A path: JSON Pointer (RFC 6901) string, or array of segments. */
 export type Path = string | ReadonlyArray<string | number>;
@@ -380,15 +405,36 @@ export function tryParseNodeHeader(chunk: Buffer, offset: number): ParseResult {
       },
     };
   }
-
-  // Spec §4: 0xC0..0xFF are extension codes - readers SHOULD treat them as
-  // opaque using the varuint length prefix to skip the payload.
-  if (code >= 0xc0) {
-    return { ok: true, header: { kind: "extension" } };
+  if (code >= T_TINY_EXT_MIN && code <= T_TINY_EXT_MAX) {
+    return {
+      ok: true,
+      header: {
+        kind: "extension",
+        extId: code - T_TINY_EXT_MIN,
+        payloadOffset: offset + 1,
+      },
+    };
+  }
+  if (code === T_EXT) {
+    let lb: number;
+    let extId: number;
+    try {
+      const r = readVarUInt(chunk, 1);
+      lb = r.bytes;
+      extId = r.value;
+    } catch (err) {
+      if (err instanceof VarUIntTruncatedError) {
+        return { ok: false, neededLen: Math.min(11, chunk.length + 10) };
+      }
+      throw err;
+    }
+    return {
+      ok: true,
+      header: { kind: "extension", extId, payloadOffset: offset + 1 + lb },
+    };
   }
 
-  // Reserved gaps (0x35..0x3F, 0x48..0x4F, 0x52..0x5F, 0x88..0xBF) and any
-  // unrecognized code: §11.1 requires rejection.
+  // Reserved gaps and any unrecognized code: §11.1 requires rejection.
   throw new Error(`unknown type code 0x${code.toString(16)} at offset ${offset}`);
 }
 

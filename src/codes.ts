@@ -1,7 +1,7 @@
 export const HEADER_SIZE = 6;
 export const TRAILER_SIZE = 12;
 export const MAGIC_BYTES = Buffer.from("KAHN", "ascii");
-export const VERSION = 0x01;
+export const VERSION = 0x02;
 
 export const T_NULL = 0x00;
 export const T_FALSE = 0x01;
@@ -40,6 +40,10 @@ export const T_OBJECT_LEAF_MIN = 0x80;
 export const T_OBJECT_LEAF_MAX = 0x83;
 export const T_OBJECT_INTERNAL_MIN = 0x84;
 export const T_OBJECT_INTERNAL_MAX = 0x87;
+
+export const T_TINY_EXT_MIN = 0xc0;
+export const T_TINY_EXT_MAX = 0xcf;
+export const T_EXT = 0xd0;
 
 export type OffsetWidth = 1 | 2 | 4 | 8;
 
